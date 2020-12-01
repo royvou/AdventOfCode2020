@@ -1,5 +1,6 @@
 ﻿using AoCHelper;
 using System.IO;
+using System.Linq;
 
 namespace AdventOfCode
 {
@@ -12,8 +13,30 @@ namespace AdventOfCode
             _input = File.ReadAllText(InputFilePath);
         }
 
-        public override string Solve_1() => $"Solution to {ClassPrefix} {CalculateIndex()}, part 1";
+        public override string Solve_1()
+        {
+            var inputNumbers = _input.ParseAsArray();
 
-        public override string Solve_2() => $"Solution to {ClassPrefix} {CalculateIndex()}, part 2";
+            var result = from a in inputNumbers
+                from b in inputNumbers
+                where a + b == 2020
+                select a * b;
+
+            return result.FirstOrDefault().ToString();
+        }
+
+        public override string Solve_2()
+        {
+            var inputNumbers = _input.ParseAsArray();
+
+            var result =
+                from a in inputNumbers
+                from b in inputNumbers
+                from c in inputNumbers
+                where a + b + c == 2020
+                select a * b * c;
+
+            return result.FirstOrDefault().ToString();
+        }
     }
 }
