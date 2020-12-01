@@ -17,3 +17,6 @@ jobs:
 
     - name: Build
       run: dotnet build -c Release
+
+    - name: Run
+      run: cd AdventOfCode && dotnet run
