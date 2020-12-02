@@ -14,7 +14,7 @@ namespace AdventOfCode
             => input.Split(" ", StringSplitOptions.RemoveEmptyEntries);
 
         public static string[] SplitNewLine(this string input)
-            => input.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+            => input.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
     }
 }
