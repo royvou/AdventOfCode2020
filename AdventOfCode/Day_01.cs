@@ -32,6 +32,7 @@ namespace AdventOfCode
             var result =
                 from a in inputNumbers
                 from b in inputNumbers
+                where a + b <= 2020
                 from c in inputNumbers
                 where a + b + c == 2020
                 select a * b * c;
