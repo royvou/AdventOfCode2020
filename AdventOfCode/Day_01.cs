@@ -18,7 +18,9 @@ namespace AdventOfCode
             var inputNumbers = _input.ParseAsArray();
 
             var result = from a in inputNumbers
+                where a < 2020
                 from b in inputNumbers
+                where b < 2020
                 where a + b == 2020
                 select a * b;
 
