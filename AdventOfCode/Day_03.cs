@@ -9,32 +9,51 @@ namespace AdventOfCode
     {
         private string _input;
 
+        private char[][] _map;
         public Day_03()
         {
             _input = File.ReadAllText(InputFilePath);
+            _map = _input.SplitNewLine().Select(x => x.ToCharArray()).ToArray();
         }
 
         public override string Solve_1()
         {
-            int trees = 0;
-            var map = _input.SplitNewLine().Select(x => x.ToCharArray()).ToArray();
-            
-            int x = 0;
-            for (int y = 0; y < map.Length; y++)
-            {
-                if (map[y][x % map[y].Length] == '#')
-                {
-                    trees += 1;
-                } ;
-                x += 3;
-            }
+            var trees = CalculateTreeEncounters(3,1);
 
             return trees.ToString();
         }
 
+        private int CalculateTreeEncounters(int xPlus, int yPlus)
+        {
+            int trees = 0;
+          
+            int x = 0;
+            for (int y = 0; y < _map.Length; y += yPlus)
+            {
+                if (_map[y][x % _map[y].Length] == '#')
+                {
+                    trees += 1;
+                }
+
+                ;
+                x += xPlus;
+            }
+
+            return trees;
+        }
+
         public override string Solve_2()
         {
-            return null;
+            var slopes = new[]
+            {
+                (1, 1),
+                (3, 1),
+                (5, 1),
+                (7, 1),
+                (1, 2)
+            };
+
+            return slopes.Select(x => CalculateTreeEncounters(x.Item1, x.Item2)).Aggregate((x, y) => x * y).ToString();
         }
     }
 }
