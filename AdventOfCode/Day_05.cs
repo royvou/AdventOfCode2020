@@ -17,10 +17,7 @@ namespace AdventOfCode
 
         public override string Solve_1()
         {
-            return _input.SplitNewLine().Select(x =>
-            {
-                return GetSeatId(x);
-            }).Max().ToString();
+            return _input.SplitNewLine().Select(x => GetSeatId(x)).Max().ToString();
         }
 
         public int GetSeatId(string info)
@@ -61,7 +58,6 @@ namespace AdventOfCode
                 if (@char == 'F')
                 {
                     max = ((min + max) / 2);
-                    //min = min;
                 }
                 else if (@char == 'B')
                 {
@@ -74,7 +70,19 @@ namespace AdventOfCode
 
         public override string Solve_2()
         {
-            throw new NotImplementedException();
+            var seatIds = _input.SplitNewLine().Select(x => GetSeatId(x)).OrderBy(x => x).ToList();
+
+            for (int i = 0; i < seatIds.Count; i++)
+            {
+                var currentSeat = seatIds[i];
+
+                if (seatIds[i] + 1 != seatIds[i + 1])
+                {
+                    return (seatIds[i] + 1).ToString();
+                }
+            }
+
+            return null;
         }
     }
 }
