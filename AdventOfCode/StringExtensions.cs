@@ -16,5 +16,8 @@ namespace AdventOfCode
         public static string[] SplitNewLine(this string input)
             => input.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
+        private static readonly string doubleNewLine = Environment.NewLine + Environment.NewLine;
+        public static string[] SplitDoubleNewLine(this string input)
+            => input.Split(doubleNewLine, StringSplitOptions.RemoveEmptyEntries);
     }
 }

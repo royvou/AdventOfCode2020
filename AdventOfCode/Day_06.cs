@@ -17,19 +17,15 @@ namespace AdventOfCode
 
         public override string Solve_1()
         {
-            return _input.Split(Environment.NewLine + Environment.NewLine).Select(x =>
-            {
-                return x.Replace(Environment.NewLine, "").Distinct().Count();
-            }).Sum().ToString();
+            return _input.SplitDoubleNewLine().Select(x => x.Replace(Environment.NewLine, string.Empty).Distinct().Count()).Sum().ToString();
         }
 
         public override string Solve_2()
         {
-            return _input.Split(Environment.NewLine + Environment.NewLine).Select(x =>
+            return _input.SplitDoubleNewLine().Select(x =>
             {
                 var a = x.SplitNewLine();
-
-                return x.Replace(Environment.NewLine, "").GroupBy(y => y).Where(y => y.Count() == a.Count()).Count();
+                return x.Replace(Environment.NewLine, string.Empty).GroupBy(y => y).Count(y => y.Count() == a.Length);
             }).Sum().ToString();
         }
     }

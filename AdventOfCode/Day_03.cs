@@ -28,7 +28,7 @@ namespace AdventOfCode
             int trees = 0;
           
             int x = 0;
-            for (int y = 0; y < _map.Length; y += yPlus)
+            for (var y = 0; y < _map.Length; y += yPlus)
             {
                 if (_map[y][x % _map[y].Length] == '#')
                 {
