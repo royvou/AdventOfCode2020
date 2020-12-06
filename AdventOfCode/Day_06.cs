@@ -25,7 +25,12 @@ namespace AdventOfCode
 
         public override string Solve_2()
         {
-            throw new NotImplementedException();
+            return _input.Split(Environment.NewLine + Environment.NewLine).Select(x =>
+            {
+                var a = x.SplitNewLine();
+
+                return x.Replace(Environment.NewLine, "").GroupBy(y => y).Where(y => y.Count() == a.Count()).Count();
+            }).Sum().ToString();
         }
     }
 }
