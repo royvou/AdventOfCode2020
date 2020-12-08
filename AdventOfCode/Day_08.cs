@@ -19,7 +19,13 @@ namespace AdventOfCode
         public override string Solve_1()
         {
             var records = _input.SplitNewLine().Select(ParseInstruction).ToList();
+            var acc = RunSimulation(records);
 
+            return acc.Accumulator.ToString();
+        }
+
+        private static (bool InfiniteLoop, int Accumulator) RunSimulation(List<Instruction> records)
+        {
             var index = 0;
             var acc = 0;
             var visitedIndexes = new HashSet<int>();
@@ -28,40 +34,66 @@ namespace AdventOfCode
             {
                 if (visitedIndexes.Contains(index))
                 {
-                    break;
+                    return (InfiniteLoop: true, Accumulator: acc);//break;)
                 }
+
+                if (index == (records.Count - 1))
+                {
+                    return (InfiniteLoop: false, Accumulator: acc);//break;)
+                }
+
                 visitedIndexes.Add(index);
 
                 var record = records[index];
                 switch (record.Type)
                 {
-                    case InstructionType.acc: 
+                    case InstructionType.Acc:
                         acc += record.TypeModifer;
                         index += 1;
                         break;
-                    case  InstructionType.jmp:
+                    case InstructionType.Jmp:
                         index += record.TypeModifer;
                         break;
-                    case InstructionType.nop:
+                    case InstructionType.Nop:
                         index += 1;
-                        break;        
+                        break;
                 }
-
             }
 
-            return acc.ToString();
+            return default;
         }
 
         private Instruction ParseInstruction(string arg)
         {
-            var type = Enum.Parse<InstructionType>(arg.Substring(0, 3));
+            var type = Enum.Parse<InstructionType>(arg.Substring(0, 3), true);
             var modifier = int.Parse(arg.Substring(4));
             return new Instruction(type, modifier);
         }
 
         public override string Solve_2()
         {
-            throw new NotImplementedException();
+            var records = _input.SplitNewLine().Select(ParseInstruction).ToList();
+
+            var result =Enumerable.Range(0, records.Count).Select(x =>
+            {
+                //Filter 
+                var record = records[x];
+                if (record.Type == InstructionType.Acc)
+                    return null;
+
+                var newList = new List<Instruction>(records);
+                var newRecord = record with { 
+                    Type = record.Type switch {
+                        InstructionType.Jmp => InstructionType.Nop, 
+                        InstructionType.Nop => InstructionType.Jmp,
+                        //InstructionType.Acc => ,
+                    _ => throw new ArgumentOutOfRangeException()
+                }};
+                newList[x] = newRecord;
+                return newList;
+            }).Where(x => x is not null).Select(x =>  RunSimulation(x)).FirstOrDefault(x => !x.InfiniteLoop);
+
+            return result.Accumulator.ToString();
         }
         
         
@@ -71,8 +103,8 @@ namespace AdventOfCode
 
     public enum InstructionType
     {
-        nop,
-        acc,
-        jmp
+        Nop,
+        Acc,
+        Jmp
     }
 }
