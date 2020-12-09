@@ -19,13 +19,14 @@ namespace AdventOfCode
         public override string Solve_1()
         {
             var list = _input.TrimEnd().ParseAsLongArray().ToArray();
-            
+
             var result = GetInvalidNumbers(list, 25);
             return result.FirstOrDefault().ToString();
         }
 
         private IEnumerable<long> GetInvalidNumbers(IList<long> list, int preamble)
         {
+            // Precalculated queue with all valid numbers
             var validNumbers = new Queue<long>();
             for (int i = 0; i < preamble - 1; i++)
             {
@@ -34,8 +35,8 @@ namespace AdventOfCode
                     validNumbers.Enqueue(list[i] + list[y]);
                 }
             }
-            
-            
+
+
             for (int i = preamble; i < list.Count; i++)
             {
                 var number = list[i];
@@ -60,7 +61,37 @@ namespace AdventOfCode
 
         public override string Solve_2()
         {
-            throw new NotImplementedException();
+            var list = _input.TrimEnd().ParseAsLongArray().ToArray();
+
+            var result = GetInvalidNumbers(list, 25);
+            var invalidNumber = result.FirstOrDefault();
+
+            var result2 = GetNumbersWithSumGroupSized(list, invalidNumber);
+            return (result2.Min() + result2.Max()).ToString();
+        }
+
+        private IEnumerable<long> GetNumbersWithSumGroupSized(long[] list, long invalidNumber, int groupSize = 2)
+        {
+            return Enumerable.Range(2, 100).Select(x => GetNumbersWithSum(list, invalidNumber, x)).FirstOrDefault(x => x != null);
+        }
+        
+        private IEnumerable<long> GetNumbersWithSum(long[] list, in long invalidNumber, int groupSize = 2)
+        {
+            long sum = list.Take(groupSize).Sum();
+
+            for (int i = groupSize; i < list.Length; i++)
+            {
+                if (sum == invalidNumber)
+                {
+                    return list.Skip(i - groupSize).Take(groupSize);    
+                }
+                
+                
+                sum += list[i];
+                sum -= list[i - groupSize];
+            }
+
+            return null;
         }
     }
 }
