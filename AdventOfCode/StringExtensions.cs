@@ -10,6 +10,9 @@ namespace AdventOfCode
         public static IEnumerable<int> ParseAsArray(this string input)
             => input.SplitNewLine().Select(x => int.Parse(x));
 
+        public static IEnumerable<long> ParseAsLongArray(this string input)
+            => input.SplitNewLine().Select(x => long.Parse(x));
+        
         public static string[] SplitSpace(this string input)
             => input.Split(" ", StringSplitOptions.RemoveEmptyEntries);
 
