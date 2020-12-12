@@ -9,11 +9,8 @@ namespace AdventOfCode
 {
     public class Day_08 : BaseDay
     {
-        private string _input;
-
         public Day_08()
         {
-            _input = File.ReadAllText(InputFilePath);
         }
 
         public override string Solve_1()
@@ -86,7 +83,6 @@ namespace AdventOfCode
                     Type = record.Type switch {
                         InstructionType.Jmp => InstructionType.Nop, 
                         InstructionType.Nop => InstructionType.Jmp,
-                        //InstructionType.Acc => ,
                     _ => throw new ArgumentOutOfRangeException()
                 }};
                 newList[x] = newRecord;

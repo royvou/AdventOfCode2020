@@ -9,12 +9,9 @@ namespace AdventOfCode
 {
     public class Day_11 : BaseDay
     {
-        private string _input;
 
         public Day_11()
         {
-            //.Replace(".txt", ".sample.txt")
-            _input = File.ReadAllText(InputFilePath);
         }
 
         public override string Solve_1()

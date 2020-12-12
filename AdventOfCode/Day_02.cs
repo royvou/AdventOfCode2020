@@ -7,11 +7,8 @@ namespace AdventOfCode
 {
     public class Day_02 : BaseDay
     {
-        private string _input;
-
         public Day_02()
         {
-            _input = File.ReadAllText(InputFilePath);
         }
 
         public override string Solve_1()
