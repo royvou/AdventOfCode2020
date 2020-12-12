@@ -19,33 +19,24 @@ namespace AdventOfCode
 
         public override string Solve_1()
         {
-            try
+            var map = _input.Trim().SplitNewLine().Select(x => x.ToCharArray()).ToArray();
+            var currentMap = map;
+
+            var loop = 0l;
+            var hasCHanges = false;
+            do
             {
-                var map = _input.Trim().SplitNewLine().Select(x => x.ToCharArray()).ToArray();
-                var currentMap = map;
+                loop += 1;
+                hasCHanges = CalculateNextMap(currentMap, out var newMap);
+                currentMap = newMap;
+            } while (hasCHanges);
 
-                var loop = 0l;
-                var hasCHanges = false;
-                do
-                {
-                    loop += 1;
-                    hasCHanges = CalculateNextMap(currentMap, out var newMap);
-                    currentMap = newMap;
-                } while (hasCHanges);
-
-                return currentMap.SelectMany(x => x).Count(x => x == '#').ToString();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
-
-            return "";
+            return currentMap.SelectMany(x => x).Count(x => x == '#').ToString();
         }
 
         public bool CalculateNextMap(char[][] map, out char[][] newMap)
         {
-            newMap = CreateMap(map.Length, map[0].Length);
+            newMap = DuplicateMap(map.Length, map[0].Length);
             var hasCHanges = false;
             for (int y = 0; y < map.Length; y++)
             {
@@ -85,7 +76,7 @@ namespace AdventOfCode
             return hasCHanges;
         }
 
-        private char[][] CreateMap(in int mapLength, in int length)
+        private char[][] DuplicateMap(in int mapLength, in int length)
         {
             var result = new char[mapLength][];
             for (int i = 0; i < mapLength; i++)
@@ -122,7 +113,112 @@ namespace AdventOfCode
 
         public override string Solve_2()
         {
-            throw new NotImplementedException();
+            var map = _input.Trim().SplitNewLine().Select(x => x.ToCharArray()).ToArray();
+            var currentMap = map;
+
+            var loop = 0l;
+            var hasCHanges = false;
+            do
+            {
+                loop += 1;
+                hasCHanges = CalculateNextMap2(currentMap, out var newMap);
+                currentMap = newMap;
+            } while (hasCHanges);
+
+            return currentMap.SelectMany(x => x).Count(x => x == '#').ToString();
+        }
+
+        public bool CalculateNextMap2(char[][] map, out char[][] newMap)
+        {
+            newMap = DuplicateMap(map.Length, map[0].Length);
+            var hasCHanges = false;
+            for (int y = 0; y < map.Length; y++)
+            {
+                for (int x = 0; x < map[y].Length; x++)
+                {
+                    switch (map[y][x])
+                    {
+                        case 'L':
+                            if (NumberSurroundings2(map, x, y) == 0)
+                            {
+                                newMap[y][x] = '#';
+                                hasCHanges = true;
+                                break;
+                            }
+
+                            newMap[y][x] = map[y][x];
+                            break;
+                        case '#':
+                            if (NumberSurroundings2(map, x, y) >= 5)
+                            {
+                                newMap[y][x] = 'L';
+                                hasCHanges = true;
+                                break;
+                            }
+
+                            newMap[y][x] = map[y][x];
+                            break;
+                        default:
+                            newMap[y][x] = map[y][x];
+
+                            break;
+                    }
+                }
+            }
+
+
+            return hasCHanges;
+        }
+
+        private int NumberSurroundings2(in char[][] map, in int x, in int y)
+        {
+            var multipliers = new[]
+            {
+                (x: -1, y: -1),
+                (x: -1, y: 0),
+                (x: -1, y: 1),
+                (x: 0, y: -1),
+                //(0, 0),
+                (x: 0, y: 1),
+                (x: 1, y: -1),
+                (x: 1, y: 0),
+                (x: 1, y: 1),
+            };
+
+            int result = 0;
+            foreach (var multiplier in multipliers)
+            {
+                for (int i = 1; i < 100; i++)
+                {
+                    var xx = x + (multiplier.x * i);
+                    var yy = y + (multiplier.y * i);
+
+                    if (
+                        xx >= 0
+                        && yy >= 0
+                        && xx < map[0].Length
+                        && yy < map.Length)
+                    {
+                        var a = (map[yy][xx]) switch
+                        {
+                            '#' => result += 1,
+                            'L' => 1,
+                            _ => -1,
+                        };
+
+                        if (a > 0)
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return result;
         }
     }
 }
