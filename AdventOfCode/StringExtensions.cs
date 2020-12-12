@@ -17,7 +17,11 @@ namespace AdventOfCode
             => input.Split(" ", StringSplitOptions.RemoveEmptyEntries);
 
         public static string[] SplitNewLine(this string input)
-            => input.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+            => input.Split(new []
+            {
+                Environment.NewLine,
+                "\n" //Used as newline in unit tests
+            }, StringSplitOptions.RemoveEmptyEntries);
 
         private static readonly string doubleNewLine = Environment.NewLine + Environment.NewLine;
         public static string[] SplitDoubleNewLine(this string input)
