@@ -19,12 +19,14 @@ namespace AdventOfCode2020.Tests
         [InlineData(typeof(Day_10), "3000", "193434623148032")]
         [InlineData(typeof(Day_11), "2243", "2027")]
         [InlineData(typeof(Day_12), "759", "45763")]
+        [InlineData(typeof(Day_13), "2845", "487905974205117")]
+
         public void TestAllDays(Type type, string result1, string result2)
         {
-            var day = (BaseDay)Activator.CreateInstance(type);
-            
-            Assert.Equal(  result1,day.Solve_1());
-            Assert.Equal(  result2,day.Solve_2());
+            var day = (BaseDay) Activator.CreateInstance(type);
+
+            Assert.Equal(result1, day.Solve_1());
+            Assert.Equal(result2, day.Solve_2());
         }
     }
 }
