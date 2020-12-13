@@ -25,7 +25,21 @@ namespace AdventOfCode
 
         public override string Solve_2()
         {
-            throw new NotImplementedException();
+            var splittedInput = _input.SplitNewLine();
+            var busIds = splittedInput.Last().Split(',').Select((x,index) => new Day13Bus(int.TryParse(x, out var parsedX) ? parsedX : -1,  index, x == "x")).Where(x => !x.IsIgnored).ToList();
+            
+            var bus1 = busIds[0];
+            long time = 0;
+            for (;; time += bus1.Id)
+            {
+                if (busIds.All(bus => (time + bus.Index) % bus.Id ==0))
+                {
+                    return time.ToString();
+                }
+                
+            }
         }
     }
+
+    public record Day13Bus(int Id, int Index, bool IsIgnored);
 }
