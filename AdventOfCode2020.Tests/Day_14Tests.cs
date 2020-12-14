@@ -13,18 +13,12 @@ namespace AdventOfCode2020.Tests
             Assert.Equal(day.Solve_1(), output);
         }
 
-        /*
         [Theory]
-        [InlineData("7,13,x,x,59,x,31,19", "1068781")]
-        [InlineData("17,x,13,19", "3417")]
-        [InlineData("67,7,59,61", "754018")]
-        [InlineData("67,x,7,59,61", "779210")]
-        [InlineData("67,7,x,59,61", "1261476")]
-        [InlineData("1789,37,47,1889", "1202161486")]
+        [InlineData("mask = 000000000000000000000000000000X1001X\nmem[42] = 100\nmask = 00000000000000000000000000000000X0XX\nmem[26] = 1", "208")]
         public void Part2(string input, string output)
         {
-            var day = new Day_13(input);
+            var day = new Day_14(input);
             Assert.Equal(day.Solve_2(), output);
-        }*/
+        }
     }
 }
