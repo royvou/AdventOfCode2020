@@ -19,10 +19,10 @@ namespace AdventOfCode
         public override string Solve_1()
             => NthNumber(2020);
 
-        private string NthNumber(int number)
-            => GetEnumeratorFor(_input.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).AsInt(), number + 1).Skip(number - 1).FirstOrDefault().ToString();
+        private string NthNumber(in int number)
+            => GetEnumeratorFor(_input.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).AsInt(), number).ToString();
 
-        private IEnumerable<int> GetEnumeratorFor(IEnumerable<int> input, int maxTurns = int.MaxValue)
+        private int GetEnumeratorFor(in IEnumerable<int> input, in int maxTurns = int.MaxValue)
         {
             var history = new Dictionary<int, (int SecondLastIndex, int LatestIndex)>();
 
@@ -33,12 +33,10 @@ namespace AdventOfCode
             {
                 history[number] = (-1,turn);
                 lastNumber = number;
-                yield return lastNumber;
-
                 turn += 1;
             }
 
-            while (turn < maxTurns)
+            while (turn <= maxTurns)
             {
                 var historyOfLastSpoken = history[lastNumber];
                 int toSpeak;
@@ -62,9 +60,10 @@ namespace AdventOfCode
                     history[toSpeak]= (-1,turn);
                 }
 
-                yield return lastNumber;
                 turn += 1;
             }
+
+            return lastNumber;
         }
 
 

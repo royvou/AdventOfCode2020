@@ -22,6 +22,8 @@ namespace AdventOfCode2020.Tests
         [InlineData(typeof(Day_13), "2845", "487905974205117")]
         [InlineData(typeof(Day_14), "2346881602152", "3885232834169")]
         [InlineData(typeof(Day_15), "662", "37312")]
+        [InlineData(typeof(Day_16), "21071", "3429967441937")]
+
         public void TestAllDays(Type type, string result1, string result2)
         {
             var day = (BaseDay) Activator.CreateInstance(type);
