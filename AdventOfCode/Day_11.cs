@@ -19,7 +19,7 @@ namespace AdventOfCode
             var map = _input.Trim().SplitNewLine().Select(x => x.ToCharArray()).ToArray();
             var currentMap = map;
 
-            var loop = 0l;
+            var loop = 0L;
             var hasCHanges = false;
             do
             {
@@ -113,7 +113,7 @@ namespace AdventOfCode
             var map = _input.Trim().SplitNewLine().Select(x => x.ToCharArray()).ToArray();
             var currentMap = map;
 
-            var loop = 0l;
+            var loop = 0L;
             var hasCHanges = false;
             do
             {

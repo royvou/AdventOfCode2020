@@ -9,11 +9,8 @@ namespace AdventOfCode
 {
     public class Day_09 : BaseDay
     {
-        private string _input;
-
         public Day_09()
         {
-            _input = File.ReadAllText(InputFilePath);
         }
 
         public override string Solve_1()
@@ -74,7 +71,7 @@ namespace AdventOfCode
         {
             return Enumerable.Range(2, 100).Select(x => GetNumbersWithSum(list, invalidNumber, x)).FirstOrDefault(x => x != null);
         }
-        
+
         private IEnumerable<long> GetNumbersWithSum(long[] list, in long invalidNumber, int groupSize = 2)
         {
             long sum = list.Take(groupSize).Sum();
@@ -83,10 +80,10 @@ namespace AdventOfCode
             {
                 if (sum == invalidNumber)
                 {
-                    return list.Skip(i - groupSize).Take(groupSize);    
+                    return list.Skip(i - groupSize).Take(groupSize);
                 }
-                
-                
+
+
                 sum += list[i];
                 sum -= list[i - groupSize];
             }

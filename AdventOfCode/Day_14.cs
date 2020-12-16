@@ -20,7 +20,7 @@ namespace AdventOfCode
             var memory = new Dictionary<int, long>();
             var inputLines = _input.SplitNewLine();
 
-            long orMask = 0l, andMask = 0l;
+            long orMask = 0L, andMask = 0L;
             foreach (var line in inputLines)
             {
                 if (line.StartsWith("mask = "))
@@ -112,7 +112,7 @@ namespace AdventOfCode
             var memory = new Dictionary<long, long>();
             var inputLines = _input.SplitNewLine();
 
-            long orMask = 0l;
+            long orMask = 0L;
             long[] andMasks = null;
             foreach (var line in inputLines)
             {

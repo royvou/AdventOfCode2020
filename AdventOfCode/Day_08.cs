@@ -56,8 +56,6 @@ namespace AdventOfCode
                         break;
                 }
             }
-
-            return default;
         }
 
         private Instruction ParseInstruction(string arg)

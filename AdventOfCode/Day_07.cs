@@ -10,14 +10,8 @@ namespace AdventOfCode
 {
     public class Day_07 : BaseDay
     {
-        public Day_07()
-        {
-        }
-
         public override string Solve_1()
         {
-            var contain = "contain";
-
             var bags = _input.SplitNewLine().ToImmutableDictionary(
                 input => Regex.Match(input, @"^(.*?) bag(s|) contain .*").Groups[1].Value,
                 input => Regex.Matches(input, @"(\d (.*?) bag(s|))").Select(x => x.Groups[2].Value).ToArray());

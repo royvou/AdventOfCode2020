@@ -44,7 +44,7 @@ namespace AdventOfCode
                         => accumulator with { east = accumulator.east - next.Amount},
                     {Direction: Day12_Direction.L} action => accumulator with { direcation = (360 + accumulator.direcation + next.Amount) % 360},
                     {Direction: Day12_Direction.R} action => accumulator with { direcation = (360 + accumulator.direcation - next.Amount) % 360},
-                    _ => accumulator
+                    var _ => accumulator
                 };
             }));
             return result;
@@ -89,6 +89,7 @@ namespace AdventOfCode
                 90 => accumulator with { northWaypoint = accumulator.eastWaypoint, eastWaypoint = -accumulator.northWaypoint},
                 180 => accumulator with { northWaypoint = -accumulator.northWaypoint, eastWaypoint = -accumulator.eastWaypoint},
                 270 => accumulator with { northWaypoint = -accumulator.eastWaypoint, eastWaypoint = accumulator.northWaypoint},
+                _ => throw new ArgumentOutOfRangeException(nameof(accumulatorDirecation), accumulatorDirecation, null)
             };
         }
     }
