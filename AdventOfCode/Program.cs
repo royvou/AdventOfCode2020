@@ -1,7 +1,13 @@
 ﻿using AoCHelper;
 
+var config = new SolverConfiguration()
+{
+    ShowConstructorElapsedTime = true,
+    ShowTotalElapsedTimePerDay = true,
+    ShowOverallResults = true,
+};
 #if DEBUG
-Solver.SolveLast();
+Solver.SolveLast(config);
 #else
-Solver.SolveAll();
+Solver.SolveAll(config);
 #endif
