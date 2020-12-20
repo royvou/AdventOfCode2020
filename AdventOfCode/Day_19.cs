@@ -53,6 +53,7 @@ namespace AdventOfCode
             return lines.Where(x =>
             {
                 var (success, startIndex) = IsValidLine(rules, 0, x, 0);
+
                 return success && startIndex == x.Length;
             }).Count().ToString();
         }
@@ -63,6 +64,11 @@ namespace AdventOfCode
 
             if (currentRule.Char.HasValue)
             {
+                if (startIndex >= inputString.Length)
+                {
+                    return (false, startIndex);
+                }
+
                 var matches = inputString[startIndex] == currentRule.Char.Value;
                 return (matches, matches ? startIndex + 1 : -1);
             }
@@ -83,7 +89,14 @@ namespace AdventOfCode
                         match = false;
                         break;
                     }
+
+                    //If we have matched the full string after this  check, check if its one of the recurisve items then succeed else let itfail :)
+                    if (localIndex == inputString.Length && (rule == 8 || rule == 11 || rule == 31))
+                    {
+                        return (true, localIndex);
+                    }
                 }
+
 
                 if (match)
                 {
@@ -95,7 +108,58 @@ namespace AdventOfCode
         }
 
 
-        public override string Solve_2() => throw new NotImplementedException();
+        public override string Solve_2()
+        {
+            var rules = new Dictionary<int, Day19Rule>();
+            var rawLines = _input.SplitNewLine();
+            var lines = new List<string>();
+            foreach (var line in rawLines)
+            {
+                var regexMatch = Regex.Match(line, @"(\d*): (.*)");
+                if (regexMatch.Success)
+                {
+                    var ruleNumber = int.Parse(regexMatch.Groups[1].Value);
+                    Day19Rule rule = null;
+                    var values = regexMatch.Groups[2].Value;
+                    //Is Char
+                    var regexMatch2 = Regex.Match(values, @"""(.*)""");
+                    if (regexMatch2.Success)
+                    {
+                        rule = new Day19Rule(regexMatch2.Groups[1].Value[0], null);
+                    }
+                    else
+                    {
+                        //Reference
+                        var references = values.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(x => x.SplitSpace().Select(y => int.Parse(y)).ToArray()).ToArray();
+                        rule = new Day19Rule(null, references);
+                    }
+
+                    rules.Add(ruleNumber, rule);
+                }
+                else
+                {
+                    lines.Add(line);
+                }
+            }
+
+            //Overrule part 2 rules
+            rules[8] = new Day19Rule(null, new[]
+            {
+                new[] {42,},
+                new[] {42, 8,},
+            });
+            rules[11] = new Day19Rule(null, new[]
+            {
+                new[] {42, 31,},
+                new[] {42, 11, 31,},
+            });
+
+            return lines.Where(x =>
+            {
+                var (success, startIndex) = IsValidLine(rules, 0, x, 0);
+                return success && startIndex == x.Length;
+            }).Count().ToString();
+        }
     }
 
     public record Day19Rule(char? Char, int[][] References);
