@@ -91,76 +91,59 @@ namespace AdventOfCode
         public override string Solve_2()
         {
             var inputOperations = _input.Replace("(", "( ").Replace(")", " )");
-
             return inputOperations.SplitNewLine().Select(x =>
             {
-                var ops = x.SplitSpace().ToList();
-                ConvertPriority(ref ops);
-                return ExecuteOperations(ops);
+                return (long) EvaluateExpression(new Queue<char>(x.ToCharArray().Where(c => c != ' ')),
+                    new Dictionary<char, int>() {['+'] = 0, ['*'] = 1});
             }).Sum().ToString();
         }
 
-        private static void ConvertPriority(ref List<string> inputOperations)
-        {
-            for (var i = inputOperations.Count - 1; i > 0; i--)
+        private long ExecuteOperation(Stack<long> stash, char op)
+            => op switch
             {
-                var currentOperation = inputOperations[i];
+                '+' => stash.Pop() + stash.Pop(),
+                '*' => stash.Pop() * stash.Pop(),
+                _ => throw new NotSupportedException()
+            };
 
-                if (currentOperation == "+")
+        private long EvaluateExpression(Queue<char> expression, Dictionary<char, int> precedence)
+        {
+            var stash = new Stack<long>();
+            var ops = new Stack<char>();
+
+            while (expression.Count > 0)
+            {
+                var c = expression.Dequeue();
+                if (c >= '0' && c <= '9')
                 {
-                    //Add parentheses before/after
-                    var skip = false;
-                    if (inputOperations[i + 1] == "(" && inputOperations[i - 1] != ")")
-                    {
-                        inputOperations.Insert(inputOperations.Count.Clamp(0, inputOperations.Count), ")");
-                        inputOperations.Insert((i - 1).Clamp(0, inputOperations.Count), "(");
-                        i--;
-                        skip = true;
-                    }
-
-                    if (i - 1 >= 0 && inputOperations[i - 1] == ")" && inputOperations[i + 1] == "(")
-                    {
-                        inputOperations.Insert(i, ")");
-                        inputOperations.Insert(0, "(");
-                        i--;
-                        skip = true;
-                    }
-
-
-                    if (i - 1 >= 0 && inputOperations[i - 1] == ")" && inputOperations[i + 1] != "(")
-                    {
-                        for (int y = i; y >= 0; y--)
-                        {
-                            int parenth = 1;
-                            var tmpOp = inputOperations[y];
-                            if (tmpOp == ")")
-                                parenth++;
-                            else if (tmpOp == "(")
-                                parenth--;
-
-
-                            if (parenth == 0)
-                            {
-                                inputOperations.Insert(i, ")");
-                                inputOperations.Insert(y, "(");
-
-                                break;
-                            }
-                        }
-
-
-                        i--;
-                        skip = true;
-                    }
-
-                    if (!skip)
-                    {
-                        inputOperations.Insert((i + 2).Clamp(0, inputOperations.Count), ")");
-                        inputOperations.Insert((i - 1).Clamp(0, inputOperations.Count), "(");
-                        i--;
-                    }
+                    stash.Push((long) char.GetNumericValue(c));
+                }
+                else if (c == '(')
+                {
+                    stash.Push(EvaluateExpression(expression, precedence));
+                }
+                else if (c == ')')
+                {
+                    break;
+                }
+                else if (ops.Count == 0 || precedence[c] < precedence[ops.Peek()])
+                {
+                    ops.Push(c);
+                }
+                else
+                {
+                    stash.Push(ExecuteOperation(stash, ops.Pop()));
+                    ops.Push(c);
                 }
             }
+
+            while (ops.Count > 0)
+            {
+                stash.Push(ExecuteOperation(stash, ops.Pop()));
+            }
+
+
+            return stash.Peek();
         }
     }
 
