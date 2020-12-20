@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -17,9 +18,7 @@ namespace AdventOfCode
 
         public override string Solve_1()
         {
-            var result = 0l;
             var inputOperations = _input.Replace("(", "( ").Replace(")", " )");
-
             return inputOperations.SplitNewLine().Select(x => ExecuteOperations(x.SplitSpace())).Sum().ToString();
         }
 
@@ -28,7 +27,6 @@ namespace AdventOfCode
             var result = 0L;
 
             var activeOperation = Day18Operator.Plus;
-            var previousOperation = Day18Operator.Plus;
             var parenthesesCount = 0;
             var tmpOps = new List<string>();
             long? longValue = null;
@@ -66,9 +64,7 @@ namespace AdventOfCode
                 if (
                     parenthesesCount > 0
                 )
-                {
                     tmpOps.Add(operation);
-                }
 
                 if (tmpOp == Day18Operator.EndParentheses && parenthesesCount == 0)
                 {
@@ -87,15 +83,87 @@ namespace AdventOfCode
                     };
                     longValue = default;
                 }
-
-                previousOperation = tmpOp;
             }
 
             return result;
         }
 
-        public override string Solve_2() => throw new NotImplementedException();
+        public override string Solve_2()
+        {
+            var inputOperations = _input.Replace("(", "( ").Replace(")", " )");
+
+            return inputOperations.SplitNewLine().Select(x =>
+            {
+                var ops = x.SplitSpace().ToList();
+                ConvertPriority(ref ops);
+                return ExecuteOperations(ops);
+            }).Sum().ToString();
+        }
+
+        private static void ConvertPriority(ref List<string> inputOperations)
+        {
+            for (var i = inputOperations.Count - 1; i > 0; i--)
+            {
+                var currentOperation = inputOperations[i];
+
+                if (currentOperation == "+")
+                {
+                    //Add parentheses before/after
+                    var skip = false;
+                    if (inputOperations[i + 1] == "(" && inputOperations[i - 1] != ")")
+                    {
+                        inputOperations.Insert(inputOperations.Count.Clamp(0, inputOperations.Count), ")");
+                        inputOperations.Insert((i - 1).Clamp(0, inputOperations.Count), "(");
+                        i--;
+                        skip = true;
+                    }
+
+                    if (i - 1 >= 0 && inputOperations[i - 1] == ")" && inputOperations[i + 1] == "(")
+                    {
+                        inputOperations.Insert(i, ")");
+                        inputOperations.Insert(0, "(");
+                        i--;
+                        skip = true;
+                    }
+
+
+                    if (i - 1 >= 0 && inputOperations[i - 1] == ")" && inputOperations[i + 1] != "(")
+                    {
+                        for (int y = i; y >= 0; y--)
+                        {
+                            int parenth = 1;
+                            var tmpOp = inputOperations[y];
+                            if (tmpOp == ")")
+                                parenth++;
+                            else if (tmpOp == "(")
+                                parenth--;
+
+
+                            if (parenth == 0)
+                            {
+                                inputOperations.Insert(i, ")");
+                                inputOperations.Insert(y, "(");
+
+                                break;
+                            }
+                        }
+
+
+                        i--;
+                        skip = true;
+                    }
+
+                    if (!skip)
+                    {
+                        inputOperations.Insert((i + 2).Clamp(0, inputOperations.Count), ")");
+                        inputOperations.Insert((i - 1).Clamp(0, inputOperations.Count), "(");
+                        i--;
+                    }
+                }
+            }
+        }
     }
+
 
     public enum Day18Operator
     {
