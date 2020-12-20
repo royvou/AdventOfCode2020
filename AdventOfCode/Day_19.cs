@@ -50,17 +50,21 @@ namespace AdventOfCode
             }
 
 
-            return lines.Count(x => IsValidLine(rules, 0, x, 0).Success).ToString();
+            return lines.Where(x =>
+            {
+                var (success, startIndex) = IsValidLine(rules, 0, x, 0);
+                return success && startIndex == x.Length;
+            }).Count().ToString();
         }
 
-        private ( bool Success, int AdvanceBy) IsValidLine(Dictionary<int, Day19Rule> rules, int ruleId, string inputString, int startIndex)
+        private ( bool Success, int StartIndex) IsValidLine(Dictionary<int, Day19Rule> rules, int ruleId, string inputString, int startIndex)
         {
             var currentRule = rules[ruleId];
 
             if (currentRule.Char.HasValue)
             {
                 var matches = inputString[startIndex] == currentRule.Char.Value;
-                return (matches, matches ? 1 : 0);
+                return (matches, matches ? startIndex + 1 : -1);
             }
 
             foreach (var reference in currentRule.References)
@@ -72,7 +76,7 @@ namespace AdventOfCode
                     var matches = IsValidLine(rules, rule, inputString, localIndex);
                     if (matches.Success)
                     {
-                        localIndex += matches.AdvanceBy;
+                        localIndex = matches.StartIndex;
                     }
                     else
                     {
@@ -82,11 +86,12 @@ namespace AdventOfCode
                 }
 
                 if (match)
-                    //If we are "starting from 0" we need to check if we dont have any characters in input left to match   
-                    return (startIndex == 0 ? inputString.Length == localIndex : true, localIndex - startIndex);
+                {
+                    return (true, localIndex);
+                }
             }
 
-            return (false, 0);
+            return (false, -1);
         }
 
 
