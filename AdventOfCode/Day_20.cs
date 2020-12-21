@@ -29,24 +29,11 @@ namespace AdventOfCode
 
         public override string Solve_1()
         {
-            var rawMaps = _input.SplitDoubleNewLine();
+            var maps = ParseMaps(_input);
 
-            var maps = rawMaps.Select(x =>
-            {
-                var lines = x.SplitNewLine();
-
-                var id = long.Parse(lines[0].Substring(5).TrimEnd(':'));
-
-                var board = lines[1..].Select(x => x.ToCharArray()).ToArray();
-
-                return new Day20Map(id, board);
-            }).ToArray();
-
+            //Create lookup for matches left/top
             var mapsLeftLookp = new Dictionary<string, List<Day20Map>>();
-            var mapsBottomLookup = new Dictionary<string, List<Day20Map>>();
-
-
-            
+            var mapsTopLookup = new Dictionary<string, List<Day20Map>>();
             foreach (var map in maps)
             {
                 foreach (var turn in Turns)
@@ -58,7 +45,7 @@ namespace AdventOfCode
 
                         if (mapsLeftLookp.TryGetValue(GetKey(sideLeft), out var sideLeftValue))
                         {
-                            sideLeftValue.Add( newMap);
+                            sideLeftValue.Add(newMap);
                         }
                         else
                         {
@@ -67,25 +54,20 @@ namespace AdventOfCode
 
                         var sideBottom = newMap.GetSide(Day20Side.Top);
 
-                        if (mapsBottomLookup.TryGetValue(GetKey(sideBottom), out var sideBottomValue))
+                        if (mapsTopLookup.TryGetValue(GetKey(sideBottom), out var sideBottomValue))
                         {
                             sideBottomValue.Add(newMap);
                         }
                         else
                         {
-                            mapsBottomLookup.Add(GetKey(sideBottom), new List<Day20Map>() {newMap});
+                            mapsTopLookup.Add(GetKey(sideBottom), new List<Day20Map>() {newMap});
                         }
                     }
                 }
             }
 
             var solvedMap = new Dictionary<(int x, int y), Day20Map>();
-            
-            //var a = maps.Where(x => x.Number == 1951).FirstOrDefault().ModifyMap(Day20ModificationMode.FlipY);
-            //solvedMap[(0, 0)] = a;
-            
-            var solved = Solve(maps, solvedMap, mapsLeftLookp, mapsBottomLookup);
-
+            var solved = Solve(maps, solvedMap, mapsLeftLookp, mapsTopLookup);
             if (solved)
             {
                 var coorMax = GetCoord(maps.Length - 1, maps.Length);
@@ -98,6 +80,21 @@ namespace AdventOfCode
             }
 
             return null;
+        }
+
+        private static Day20Map[] ParseMaps(string input)
+        {
+            var rawMaps = input.SplitDoubleNewLine();
+            return rawMaps.Select(x =>
+            {
+                var lines = x.SplitNewLine();
+
+                var id = long.Parse(lines[0].Substring(5).TrimEnd(':'));
+
+                var board = lines[1..].Select(x => x.ToCharArray()).ToArray();
+
+                return new Day20Map(id, board);
+            }).ToArray();
         }
 
         private bool Solve(in Day20Map[] allMaps, Dictionary<(int x, int y), Day20Map> currentMap, Dictionary<string, List<Day20Map>> sidesLeftLookup, Dictionary<string, List<Day20Map>> sidesBottomLookup)
@@ -213,7 +210,133 @@ namespace AdventOfCode
 
         public override string Solve_2()
         {
-            throw new NotImplementedException();
+            var maps = ParseMaps(_input);
+
+            //Create lookup for matches left/top
+            var mapsLeftLookp = new Dictionary<string, List<Day20Map>>();
+            var mapsTopLookup = new Dictionary<string, List<Day20Map>>();
+            foreach (var map in maps)
+            {
+                foreach (var turn in Turns)
+                {
+                    foreach (var flip in Flips)
+                    {
+                        var newMap = map.ModifyMap(turn).ModifyMap(flip);
+                        var sideLeft = newMap.GetSide(Day20Side.Left);
+
+                        if (mapsLeftLookp.TryGetValue(GetKey(sideLeft), out var sideLeftValue))
+                        {
+                            sideLeftValue.Add(newMap);
+                        }
+                        else
+                        {
+                            mapsLeftLookp.Add(GetKey(sideLeft), new List<Day20Map>() {newMap});
+                        }
+
+                        var sideBottom = newMap.GetSide(Day20Side.Top);
+
+                        if (mapsTopLookup.TryGetValue(GetKey(sideBottom), out var sideBottomValue))
+                        {
+                            sideBottomValue.Add(newMap);
+                        }
+                        else
+                        {
+                            mapsTopLookup.Add(GetKey(sideBottom), new List<Day20Map>() {newMap});
+                        }
+                    }
+                }
+            }
+
+            var solvedMap = new Dictionary<(int x, int y), Day20Map>();
+            var solved = Solve(maps, solvedMap, mapsLeftLookp, mapsTopLookup);
+            if (solved)
+            {
+                var slicedMap = solvedMap.ToDictionary(
+                    x => x.Key,
+                    y => y.Value.Slice(1));
+
+                var fullMap = CreateFullMap(slicedMap);
+
+                long result = 0L;
+                foreach (var turn in Turns)
+                {
+                    foreach (var flip in Flips)
+                    {
+                        var abc = fullMap.ModifyMap(turn).ModifyMap(flip);
+                        result += CountMonsters(abc);
+                    }
+                }
+
+                return (CountWaves(fullMap) - (result * 15)).ToString();
+            }
+
+
+            return null;
+        }
+
+        private int CountWaves(Day20Map fullMap)
+        {
+            int result = 0;
+            for (int y = 0; y < fullMap.Board.Length; y++)
+            {
+                for (int x = 0; x < fullMap.Board[y].Length; x++)
+                {
+                    if (fullMap.Board[y][x] == '#')
+                    {
+                        result++;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private int CountMonsters(Day20Map fullMap)
+        {
+            int result = 0;
+            for (int y = 0; y < fullMap.Board.Length - 2 - 1; y++)
+            {
+                for (int x = 0; x < fullMap.Board[y].Length - 18 - 1; x++)
+                {
+                    if (fullMap.Board[x + 18][y] == '#' &&
+                        fullMap.Board[x][y + 1] == '#' &&
+                        fullMap.Board[x + 5][y + 1] == '#' &&
+                        fullMap.Board[x + 6][y + 1] == '#' &&
+                        fullMap.Board[x + 11][y + 1] == '#' &&
+                        fullMap.Board[x + 12][y + 1] == '#' &&
+                        fullMap.Board[x + 17][y + 1] == '#' &&
+                        fullMap.Board[x + 18][y + 1] == '#' &&
+                        fullMap.Board[x + 19][y + 1] == '#' &&
+                        fullMap.Board[x + 1][y + 2] == '#' &&
+                        fullMap.Board[x + 4][y + 2] == '#' &&
+                        fullMap.Board[x + 7][y + 2] == '#' &&
+                        fullMap.Board[x + 10][y + 2] == '#' &&
+                        fullMap.Board[x + 13][y + 2] == '#' &&
+                        fullMap.Board[x + 16][y + 2] == '#')
+                    {
+                        result++;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private Day20Map CreateFullMap(Dictionary<(int x, int y), Day20Map> solvedMap)
+        {
+            var boardLength = solvedMap[(0, 0)].Board.Length;
+            int width = (int) (Math.Sqrt(solvedMap.Count) * solvedMap[(0, 0)].Board.Length);
+            var board = Day20Map.CreateBoard(width, width);
+
+            for (var y = 0; y < width; y++)
+            {
+                for (var x = 0; x < width; x++)
+                {
+                    board[y][x] = solvedMap[(x / boardLength, y / boardLength)].Board[y % boardLength][x % boardLength];
+                }
+            }
+
+            return new Day20Map(1, board);
         }
     }
 
@@ -250,6 +373,9 @@ namespace AdventOfCode
                 Day20ModificationMode.FlipY => this with { Board = FlipY(Board, buffer)},
                 _ => throw new ArgumentOutOfRangeException(nameof(modificationMode), modificationMode, null)
             };
+
+        public Day20Map Slice(int size)
+            => this with { Board = Slice(Board, size)};
 
         private char[][] FlipY(char[][] board, char[][] buffer = default)
         {
@@ -307,6 +433,32 @@ namespace AdventOfCode
             return newBoard;
         }
 
+        private char[][] Slice(char[][] board, int size, char[][] buffer = default)
+        {
+            var newBoard = buffer ?? CreateBoard(board.Length - size - size, board[0].Length - size - size);
+
+            for (int y = size; y < board.Length - size; y++)
+            {
+                for (int x = size; x < board[y].Length - size; x++)
+                {
+                    newBoard[y - size][x - size] = board[y][x];
+                }
+            }
+
+            return newBoard;
+        }
+
+        public static char[][] CreateBoard(int sizeX, int sizeY)
+        {
+            var lines = new char[sizeY][];
+            for (int i = 0; i < sizeY; i++)
+            {
+                lines[i] = new char[sizeX];
+            }
+
+            return lines;
+        }
+
         public void PrintBoard()
             => PrintBoard(Board);
 
@@ -326,17 +478,6 @@ namespace AdventOfCode
 
             Console.WriteLine("");
             Console.WriteLine("---------");
-        }
-
-        public static char[][] CreateBoard(int sizeX, int sizeY)
-        {
-            var lines = new char[sizeY][];
-            for (int i = 0; i < sizeY; i++)
-            {
-                lines[i] = new char[sizeX];
-            }
-
-            return lines;
         }
     }
 
