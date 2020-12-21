@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
+using AoCHelper;
 
 namespace AdventOfCode
 {
@@ -14,6 +16,16 @@ namespace AdventOfCode
         public Day_20(string input) : base(input)
         {
         }
+
+        private static readonly Day20ModificationMode[] Turns =
+        {
+            Day20ModificationMode.None, Day20ModificationMode.Turn90, Day20ModificationMode.FlipX, Day20ModificationMode.Turn270
+        };
+
+        private static readonly Day20ModificationMode[] Flips =
+        {
+            Day20ModificationMode.None, Day20ModificationMode.FlipY
+        };
 
         public override string Solve_1()
         {
@@ -30,9 +42,49 @@ namespace AdventOfCode
                 return new Day20Map(id, board);
             }).ToArray();
 
-            var solvedMap = new Dictionary<(int x, int y), Day20Map>();
+            var mapsLeftLookp = new Dictionary<string, List<Day20Map>>();
+            var mapsBottomLookup = new Dictionary<string, List<Day20Map>>();
 
-            var solved = Solve(maps, solvedMap);
+
+            
+            foreach (var map in maps)
+            {
+                foreach (var turn in Turns)
+                {
+                    foreach (var flip in Flips)
+                    {
+                        var newMap = map.ModifyMap(turn).ModifyMap(flip);
+                        var sideLeft = newMap.GetSide(Day20Side.Left);
+
+                        if (mapsLeftLookp.TryGetValue(GetKey(sideLeft), out var sideLeftValue))
+                        {
+                            sideLeftValue.Add( newMap);
+                        }
+                        else
+                        {
+                            mapsLeftLookp.Add(GetKey(sideLeft), new List<Day20Map>() {newMap});
+                        }
+
+                        var sideBottom = newMap.GetSide(Day20Side.Top);
+
+                        if (mapsBottomLookup.TryGetValue(GetKey(sideBottom), out var sideBottomValue))
+                        {
+                            sideBottomValue.Add(newMap);
+                        }
+                        else
+                        {
+                            mapsBottomLookup.Add(GetKey(sideBottom), new List<Day20Map>() {newMap});
+                        }
+                    }
+                }
+            }
+
+            var solvedMap = new Dictionary<(int x, int y), Day20Map>();
+            
+            //var a = maps.Where(x => x.Number == 1951).FirstOrDefault().ModifyMap(Day20ModificationMode.FlipY);
+            //solvedMap[(0, 0)] = a;
+            
+            var solved = Solve(maps, solvedMap, mapsLeftLookp, mapsBottomLookup);
 
             if (solved)
             {
@@ -45,44 +97,10 @@ namespace AdventOfCode
                     solvedMap[coorMax].Number).ToString();
             }
 
-            return false.ToString();
-            //solvedMap[0,0] + solvedMap[solvedMap / ]
+            return null;
         }
 
-        private static readonly ModificationMode[] Turns =
-        {
-            ModificationMode.None, ModificationMode.Turn90, ModificationMode.Turn270
-        };
-
-        private static readonly ModificationMode[] Flips =
-        {
-            ModificationMode.None, ModificationMode.FlipX, ModificationMode.FlipY
-        };
-
-
-        private static readonly (Side Side, bool Reverse)[] Sides =
-        {
-            (Side.Bottom, false),
-            (Side.Top, false),
-            (Side.Left, false),
-            (Side.Right, false),
-
-
-            (Side.Bottom, true),
-            (Side.Top, true),
-            (Side.Left, true),
-            (Side.Right, true),
-        };
-
-        private bool Solve(in Day20Map[] allMaps, Dictionary<(int x, int y), Day20Map> currentMap)
-        {
-            var sidesLookup = allMaps.ToDictionary(x => x.Number, y => Sides.Select(x => x.Reverse ? y.GetSide(x.Side).Reverse().ToArray() : y.GetSide(x.Side)).ToArray());
-
-            return Solve(allMaps, currentMap, sidesLookup);
-        }
-
-        //BackTracking Algorithm
-        private bool Solve(in Day20Map[] allMaps, Dictionary<(int x, int y), Day20Map> currentMap, Dictionary<long, char[][]> sidesLookup)
+        private bool Solve(in Day20Map[] allMaps, Dictionary<(int x, int y), Day20Map> currentMap, Dictionary<string, List<Day20Map>> sidesLeftLookup, Dictionary<string, List<Day20Map>> sidesBottomLookup)
         {
             var posNumber = currentMap.Count - 1;
             if (currentMap.Count == allMaps.Length)
@@ -92,92 +110,60 @@ namespace AdventOfCode
 
             var (nextX, nextY) = GetCoord(posNumber + 1, allMaps.Length);
 
-            var toTry = allMaps.Where(map =>
+            List<Day20Map> toTry = null;
+            bool hasLeftFromMe = false;
+            bool skip = false;
+            if (currentMap.TryGetValue((nextX - 1, nextY), out var lefFromMe))
             {
-                var isNotAlreadyAdded = currentMap.All(y => y.Value.Number != map.Number);
+                hasLeftFromMe = true;
+                var toLookup = lefFromMe.GetSide(Day20Side.Right);
 
+                toTry = sidesLeftLookup.ContainsKey(GetKey(toLookup)) ? sidesLeftLookup[GetKey(toLookup)] : null;
 
-                bool isAllowedLeftOfme = true;
-                var mySides = sidesLookup[map.Number];
-                if (currentMap.TryGetValue((nextX - 1, nextY), out var leftOfMe))
-                {
-                    // isAllowedLeftOfme = sidesLookup[leftOfMe.Number].Any(lom => mySides.Any(ms => ms.SequenceEqual(lom)));
-                    isAllowedLeftOfme = false;
-                    foreach (var lom in sidesLookup[leftOfMe.Number])
-                    {
-                        bool any = false;
-                        foreach (var ms in mySides)
-                        {
-                            if (ms.SequenceEqual(lom))
-                            {
-                                any = true;
-                                break;
-                            }
-                        }
+                skip = toTry == null;
+            }
 
-                        if (any)
-                        {
-                            isAllowedLeftOfme = true;
-                            break;
-                        }
-                    }
-                }
+            if (!skip && currentMap.TryGetValue((nextX, nextY - 1), out var topFromMe))
+            {
+                var toLookup = topFromMe.GetSide(Day20Side.Bottom);
 
-                bool isAllowedTopOfMe = true;
-                if (currentMap.TryGetValue((nextX, nextY - 1), out var topOfMe))
-                {
-                    // isAllowedTopOfMe = sidesLookup[topOfMe.Number].Any(lom => mySides.Any(ms => ms.SequenceEqual(lom)));
-                    isAllowedTopOfMe = false;
-                    foreach (var lom in sidesLookup[topOfMe.Number])
-                    {
-                        bool any = false;
-                        foreach (var ms in mySides)
-                        {
-                            if (ms.SequenceEqual(lom))
-                            {
-                                any = true;
-                                break;
-                            }
-                        }
+                var completeList = sidesBottomLookup.ContainsKey(GetKey(toLookup)) ? sidesBottomLookup[GetKey(toLookup)] : null;
 
-                        if (any)
-                        {
-                            isAllowedTopOfMe = true;
-                            break;
-                        }
-                    }
-                }
+                toTry = toTry == null
+                    ? completeList.ToList()
+                    : toTry.Where(x => completeList.Any(y => y.Number == x.Number)).ToList();
+            }
 
+            //toTry = toTry.Where(x => currentMap.Values.All(y => y.Number != x.Number)).ToList();
+            if (currentMap.Count == 0)
+            {
+                toTry = allMaps.ToList();
+            }
 
-                return isNotAlreadyAdded; // && isAllowedLeftOfme && isAllowedTopOfMe;
-            }).ToList();
+            toTry = toTry?.Where(x => currentMap.Values.All(y => y.Number != x.Number)).ToList();
 
-            var board = Day20Map.CreateBoard(10, 10);
-            var board2 = Day20Map.CreateBoard(10, 10);
+            if (toTry == null)
+            {
+                return false;
+            }
 
             for (int possibility = 0; possibility < toTry.Count; possibility++)
             {
-                foreach (var flip in Flips)
+                var originalMap = toTry[possibility];
+                currentMap[(nextX, nextY)] = originalMap;
+                if (!IsLastPosValid(currentMap, allMaps.Length))
                 {
-                    foreach (var turn in Turns)
-                    {
-                        var originalMap = toTry[possibility];
-                        currentMap[(nextX, nextY)] = originalMap.ModifyMap(flip, board).ModifyMap(turn, board2);
-                        if (!IsLastPosValid(currentMap, allMaps.Length))
-                        {
-                            continue;
-                        }
+                    continue;
+                }
 
-                        var solved = Solve(allMaps, currentMap, sidesLookup);
-                        if (solved)
-                        {
-                            return true;
-                        }
-                        else
-                        {
-                            currentMap.Remove((nextX, nextY));
-                        }
-                    }
+                var solved = Solve(allMaps, currentMap, sidesLeftLookup, sidesBottomLookup);
+                if (solved)
+                {
+                    return true;
+                }
+                else
+                {
+                    currentMap.Remove((nextX, nextY));
                 }
             }
 
@@ -187,16 +173,18 @@ namespace AdventOfCode
             return false;
         }
 
-        private static readonly List<(int x, int y, Side current, Side mapToCheck)> SidesToCompare = new List<(int x, int y, Side current, Side mapToCheck)>
-        {
-            (-1, 0, Side.Left, Side.Right),
-            (1, 0, Side.Right, Side.Left),
+        private string GetKey(char[] input)
+            => string.Join("", input);
 
-            (0, 1, Side.Bottom, Side.Top),
-            (0, -1, Side.Top, Side.Bottom),
+        private static readonly List<(int x, int y, Day20Side current, Day20Side mapToCheck)> SidesToCompare = new()
+        {
+            (-1, 0, Day20Side.Left, Day20Side.Right),
+            (1, 0, Day20Side.Right, Day20Side.Left),
+
+            (0, 1, Day20Side.Bottom, Day20Side.Top),
+            (0, -1, Day20Side.Top, Day20Side.Bottom),
         };
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         private bool IsLastPosValid(IDictionary<(int x, int y), Day20Map> currentMap, int maxWidthMap)
         {
             var coordsToCheck = GetCoord(currentMap.Count - 1, maxWidthMap);
@@ -220,27 +208,27 @@ namespace AdventOfCode
             return true;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         private (int X, int Y) GetCoord(int number, int mapSize)
             => ((int) ((number) % Math.Sqrt(mapSize)), (int) ((number) / Math.Sqrt(mapSize)));
 
-        public override string Solve_2() => throw new NotImplementedException();
+        public override string Solve_2()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public record Day20Map(long Number, char[][] Board)
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        public char[] GetSide(Side side) =>
+        public char[] GetSide(Day20Side side) =>
             side switch
             {
-                Side.Left => BoardGetX(Board, 0),
-                Side.Right => BoardGetX(Board, Board.Length - 1),
-                Side.Top => Board[0],
-                Side.Bottom => Board[^1],
+                Day20Side.Left => BoardGetX(Board, 0),
+                Day20Side.Right => BoardGetX(Board, Board.Length - 1),
+                Day20Side.Top => Board[0],
+                Day20Side.Bottom => Board[^1],
                 _ => throw new ArgumentOutOfRangeException(nameof(side), side, null)
             };
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         private char[] BoardGetX(char[][] board, int x)
         {
             var result = new char[board.Length];
@@ -252,21 +240,17 @@ namespace AdventOfCode
             return result;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        public Day20Map ModifyMap(ModificationMode modificationMode, char[][] buffer = default) =>
+        public Day20Map ModifyMap(Day20ModificationMode modificationMode, char[][] buffer = default) =>
             modificationMode switch
             {
-                ModificationMode.None => this,
-                ModificationMode.Turn90 => this with { Board = Turn90(Board, buffer)}, //new Day20Map(Number, Turn90(Board, buffer));
-                /*case ModificationMode.Turn180:
-                    return new Day20Map(Number, Turn90(Turn90(Board, buffer), buffer));*/
-                ModificationMode.Turn270 => this with { Board = Turn270(Board, buffer)},
-                ModificationMode.FlipX => this with { Board = FlipX(Board, buffer)},
-                ModificationMode.FlipY => this with { Board = FlipY(Board, buffer)},
+                Day20ModificationMode.None => this,
+                Day20ModificationMode.Turn90 => this with { Board = Turn90(Board, buffer)},
+                Day20ModificationMode.Turn270 => this with { Board = Turn270(Board, buffer)},
+                Day20ModificationMode.FlipX => this with { Board = FlipX(Board, buffer)},
+                Day20ModificationMode.FlipY => this with { Board = FlipY(Board, buffer)},
                 _ => throw new ArgumentOutOfRangeException(nameof(modificationMode), modificationMode, null)
             };
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         private char[][] FlipY(char[][] board, char[][] buffer = default)
         {
             var newBoard = buffer ?? CreateBoard(board.Length, board[0].Length);
@@ -281,7 +265,6 @@ namespace AdventOfCode
             return newBoard;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         private char[][] FlipX(char[][] board, char[][] buffer = default)
         {
             var newBoard = buffer ?? CreateBoard(board.Length, board[0].Length);
@@ -296,7 +279,6 @@ namespace AdventOfCode
             return newBoard;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         private char[][] Turn90(char[][] board, char[][] buffer = default)
         {
             var newBoard = buffer ?? CreateBoard(board.Length, board[0].Length);
@@ -311,7 +293,6 @@ namespace AdventOfCode
             return newBoard;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         private char[][] Turn270(char[][] board, char[][] buffer = default)
         {
             var newBoard = buffer ?? CreateBoard(board.Length, board[0].Length);
@@ -347,7 +328,6 @@ namespace AdventOfCode
             Console.WriteLine("---------");
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public static char[][] CreateBoard(int sizeX, int sizeY)
         {
             var lines = new char[sizeY][];
@@ -360,7 +340,7 @@ namespace AdventOfCode
         }
     }
 
-    public enum Side
+    public enum Day20Side
     {
         Left,
         Right,
@@ -368,7 +348,7 @@ namespace AdventOfCode
         Bottom,
     }
 
-    public enum ModificationMode
+    public enum Day20ModificationMode
     {
         None,
         Turn90,
