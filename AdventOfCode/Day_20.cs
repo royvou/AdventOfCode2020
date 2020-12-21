@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace AdventOfCode
 {
@@ -30,7 +31,7 @@ namespace AdventOfCode
             }).ToArray();
 
             var solvedMap = new Dictionary<(int x, int y), Day20Map>();
-            
+
             var solved = Solve(maps, solvedMap);
 
             if (solved)
@@ -59,8 +60,29 @@ namespace AdventOfCode
         };
 
 
+        private static readonly (Side Side, bool Reverse)[] Sides =
+        {
+            (Side.Bottom, false),
+            (Side.Top, false),
+            (Side.Left, false),
+            (Side.Right, false),
+
+
+            (Side.Bottom, true),
+            (Side.Top, true),
+            (Side.Left, true),
+            (Side.Right, true),
+        };
+
+        private bool Solve(in Day20Map[] allMaps, Dictionary<(int x, int y), Day20Map> currentMap)
+        {
+            var sidesLookup = allMaps.ToDictionary(x => x.Number, y => Sides.Select(x => x.Reverse ? y.GetSide(x.Side).Reverse().ToArray() : y.GetSide(x.Side)).ToArray());
+
+            return Solve(allMaps, currentMap, sidesLookup);
+        }
+
         //BackTracking Algorithm
-        private bool Solve(Day20Map[] allMaps, IDictionary<(int x, int y), Day20Map> currentMap)
+        private bool Solve(in Day20Map[] allMaps, Dictionary<(int x, int y), Day20Map> currentMap, Dictionary<long, char[][]> sidesLookup)
         {
             var posNumber = currentMap.Count - 1;
             if (currentMap.Count == allMaps.Length)
@@ -68,23 +90,85 @@ namespace AdventOfCode
                 return true;
             }
 
-            //Get Possible maps
-            var toTry = allMaps.Where(x => { return currentMap.Values.All(y => x.Number != y.Number); }).ToList();
-
             var (nextX, nextY) = GetCoord(posNumber + 1, allMaps.Length);
+
+            var toTry = allMaps.Where(map =>
+            {
+                var isNotAlreadyAdded = currentMap.All(y => y.Value.Number != map.Number);
+
+
+                bool isAllowedLeftOfme = true;
+                var mySides = sidesLookup[map.Number];
+                if (currentMap.TryGetValue((nextX - 1, nextY), out var leftOfMe))
+                {
+                    // isAllowedLeftOfme = sidesLookup[leftOfMe.Number].Any(lom => mySides.Any(ms => ms.SequenceEqual(lom)));
+                    isAllowedLeftOfme = false;
+                    foreach (var lom in sidesLookup[leftOfMe.Number])
+                    {
+                        bool any = false;
+                        foreach (var ms in mySides)
+                        {
+                            if (ms.SequenceEqual(lom))
+                            {
+                                any = true;
+                                break;
+                            }
+                        }
+
+                        if (any)
+                        {
+                            isAllowedLeftOfme = true;
+                            break;
+                        }
+                    }
+                }
+
+                bool isAllowedTopOfMe = true;
+                if (currentMap.TryGetValue((nextX, nextY - 1), out var topOfMe))
+                {
+                    // isAllowedTopOfMe = sidesLookup[topOfMe.Number].Any(lom => mySides.Any(ms => ms.SequenceEqual(lom)));
+                    isAllowedTopOfMe = false;
+                    foreach (var lom in sidesLookup[topOfMe.Number])
+                    {
+                        bool any = false;
+                        foreach (var ms in mySides)
+                        {
+                            if (ms.SequenceEqual(lom))
+                            {
+                                any = true;
+                                break;
+                            }
+                        }
+
+                        if (any)
+                        {
+                            isAllowedTopOfMe = true;
+                            break;
+                        }
+                    }
+                }
+
+
+                return isNotAlreadyAdded; // && isAllowedLeftOfme && isAllowedTopOfMe;
+            }).ToList();
+
+            var board = Day20Map.CreateBoard(10, 10);
+            var board2 = Day20Map.CreateBoard(10, 10);
+
             for (int possibility = 0; possibility < toTry.Count; possibility++)
             {
                 foreach (var flip in Flips)
                 {
                     foreach (var turn in Turns)
                     {
-                        currentMap[(nextX, nextY)] = toTry[possibility].ModifyMap(flip).ModifyMap(turn);
+                        var originalMap = toTry[possibility];
+                        currentMap[(nextX, nextY)] = originalMap.ModifyMap(flip, board).ModifyMap(turn, board2);
                         if (!IsLastPosValid(currentMap, allMaps.Length))
                         {
                             continue;
                         }
 
-                        var solved = Solve(allMaps, currentMap);
+                        var solved = Solve(allMaps, currentMap, sidesLookup);
                         if (solved)
                         {
                             return true;
@@ -96,30 +180,33 @@ namespace AdventOfCode
                     }
                 }
             }
+
             currentMap.Remove((nextX, nextY));
 
             //Remove Last Coord
             return false;
         }
 
+        private static readonly List<(int x, int y, Side current, Side mapToCheck)> SidesToCompare = new List<(int x, int y, Side current, Side mapToCheck)>
+        {
+            (-1, 0, Side.Left, Side.Right),
+            (1, 0, Side.Right, Side.Left),
+
+            (0, 1, Side.Bottom, Side.Top),
+            (0, -1, Side.Top, Side.Bottom),
+        };
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         private bool IsLastPosValid(IDictionary<(int x, int y), Day20Map> currentMap, int maxWidthMap)
         {
             var coordsToCheck = GetCoord(currentMap.Count - 1, maxWidthMap);
-            var sidesTocheck = new List<(int x, int y, Side current, Side mapToCheck)>
-            {
-                (-1, 0, Side.Left, Side.Right),
-                (1, 0, Side.Right, Side.Left),
-
-                (0, 1, Side.Bottom, Side.Top),
-                (0, -1, Side.Top, Side.Bottom),
-            };
 
             if (!currentMap.TryGetValue((coordsToCheck.X, coordsToCheck.Y), out var currentmapcoord))
             {
                 return true;
             }
 
-            foreach (var sideToCheck in sidesTocheck)
+            foreach (var sideToCheck in SidesToCompare)
             {
                 if (currentMap.TryGetValue((coordsToCheck.X + sideToCheck.x, coordsToCheck.Y + sideToCheck.y), out var neighbor))
                 {
@@ -133,6 +220,7 @@ namespace AdventOfCode
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         private (int X, int Y) GetCoord(int number, int mapSize)
             => ((int) ((number) % Math.Sqrt(mapSize)), (int) ((number) / Math.Sqrt(mapSize)));
 
@@ -141,31 +229,47 @@ namespace AdventOfCode
 
     public record Day20Map(long Number, char[][] Board)
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public char[] GetSide(Side side) =>
             side switch
             {
-                Side.Left => Board.Select(x => x[0]).ToArray(),
-                Side.Right => Board.Select(x => x[^1]).ToArray(),
+                Side.Left => BoardGetX(Board, 0),
+                Side.Right => BoardGetX(Board, Board.Length - 1),
                 Side.Top => Board[0],
                 Side.Bottom => Board[^1],
                 _ => throw new ArgumentOutOfRangeException(nameof(side), side, null)
             };
 
-        public Day20Map ModifyMap(ModificationMode modificationMode)
-            => modificationMode switch
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        private char[] BoardGetX(char[][] board, int x)
+        {
+            var result = new char[board.Length];
+            for (int i = 0; i < board.Length; i++)
+            {
+                result[i] = board[i][x];
+            }
+
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public Day20Map ModifyMap(ModificationMode modificationMode, char[][] buffer = default) =>
+            modificationMode switch
             {
                 ModificationMode.None => this,
-                ModificationMode.Turn90 => new Day20Map(Number, Turn90(Board)),
-                ModificationMode.Turn180 => new Day20Map(Number, Turn90(Turn90(Board))),
-                ModificationMode.Turn270 => new Day20Map(Number, Turn90(Turn90(Turn90(Board)))),
-                ModificationMode.FlipX => new Day20Map(Number, FlipX(Board)),
-                ModificationMode.FlipY => new Day20Map(Number, FlipY(Board)),
+                ModificationMode.Turn90 => this with { Board = Turn90(Board, buffer)}, //new Day20Map(Number, Turn90(Board, buffer));
+                /*case ModificationMode.Turn180:
+                    return new Day20Map(Number, Turn90(Turn90(Board, buffer), buffer));*/
+                ModificationMode.Turn270 => this with { Board = Turn270(Board, buffer)},
+                ModificationMode.FlipX => this with { Board = FlipX(Board, buffer)},
+                ModificationMode.FlipY => this with { Board = FlipY(Board, buffer)},
                 _ => throw new ArgumentOutOfRangeException(nameof(modificationMode), modificationMode, null)
             };
 
-        private char[][] FlipY(char[][] board)
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        private char[][] FlipY(char[][] board, char[][] buffer = default)
         {
-            var newBoard = CreateBoard(board.Length, board[0].Length);
+            var newBoard = buffer ?? CreateBoard(board.Length, board[0].Length);
             for (int y = 0; y < board.Length; y++)
             {
                 for (int x = 0; x < board[y].Length; x++)
@@ -177,9 +281,10 @@ namespace AdventOfCode
             return newBoard;
         }
 
-        private char[][] FlipX(char[][] board)
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        private char[][] FlipX(char[][] board, char[][] buffer = default)
         {
-            var newBoard = CreateBoard(board.Length, board[0].Length);
+            var newBoard = buffer ?? CreateBoard(board.Length, board[0].Length);
             for (int y = 0; y < board.Length; y++)
             {
                 for (int x = 0; x < board[y].Length; x++)
@@ -191,14 +296,30 @@ namespace AdventOfCode
             return newBoard;
         }
 
-        private char[][] Turn90(char[][] board)
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        private char[][] Turn90(char[][] board, char[][] buffer = default)
         {
-            var newBoard = CreateBoard(board.Length, board[0].Length);
+            var newBoard = buffer ?? CreateBoard(board.Length, board[0].Length);
             for (int y = 0; y < board.Length; y++)
             {
                 for (int x = 0; x < board[y].Length; x++)
                 {
                     newBoard[x][board[y].Length - 1 - y] = board[y][x];
+                }
+            }
+
+            return newBoard;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        private char[][] Turn270(char[][] board, char[][] buffer = default)
+        {
+            var newBoard = buffer ?? CreateBoard(board.Length, board[0].Length);
+            for (int y = 0; y < board.Length; y++)
+            {
+                for (int x = 0; x < board[y].Length; x++)
+                {
+                    newBoard[board[y].Length - 1 - x][y] = board[y][x];
                 }
             }
 
@@ -226,7 +347,8 @@ namespace AdventOfCode
             Console.WriteLine("---------");
         }
 
-        private char[][] CreateBoard(int sizeX, int sizeY)
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static char[][] CreateBoard(int sizeX, int sizeY)
         {
             var lines = new char[sizeY][];
             for (int i = 0; i < sizeY; i++)
@@ -250,7 +372,8 @@ namespace AdventOfCode
     {
         None,
         Turn90,
-        Turn180,
+
+        //Turn180,
         Turn270,
         FlipX,
         FlipY
