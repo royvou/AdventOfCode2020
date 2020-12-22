@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -17,19 +18,21 @@ namespace AdventOfCode
         {
         }
 
-
         public override string Solve_1()
         {
             var players = ParsePlayers(_input);
-            var result = PlayGame(players);
-            var winner = players.FirstOrDefault(x => x.Cards.Count > 0);
-            return winner.Cards.Reverse().Select((item, index) => (index + 1) * item.Value).Sum().ToString();
+            var result = PlayGame(players, out Day22Player winner);
+            return CalculateScore(winner).ToString();
         }
 
-        private bool PlayGame(IList<Day22Player> players)
+        private static int CalculateScore(Day22Player winner)
         {
-            //while (players.Count(x => x.Cards.Count > 1) > 1)
-            while(players.Count(x => x.Cards.Count > 0) > 1)
+            return winner.Cards.Reverse().Select((item, index) => (index + 1) * item.Value).Sum();
+        }
+
+        private bool PlayGame(IList<Day22Player> players, out Day22Player gameWinner)
+        {
+            while (players.Count(x => x.Cards.Count > 0) > 1)
             {
                 IDictionary<Day22Player, Day22Card> cardPlayers = new Dictionary<Day22Player, Day22Card>();
                 foreach (var player in players)
@@ -47,12 +50,12 @@ namespace AdventOfCode
                 }
             }
 
+            gameWinner = players.OrderByDescending(x => x.Cards.Count).FirstOrDefault();
             return true;
         }
 
-        private IList<Day22Player> ParsePlayers(string input)
-        {
-            return input.SplitDoubleNewLine().Select(lines =>
+        private List<Day22Player> ParsePlayers(string input) =>
+            input.SplitDoubleNewLine().Select(lines =>
             {
                 var input = lines.SplitNewLine();
                 var name = input[0];
@@ -60,15 +63,91 @@ namespace AdventOfCode
 
                 return new Day22Player(name, new Queue<Day22Card>(cards));
             }).ToList();
-        }
 
         public override string Solve_2()
         {
-            throw new NotImplementedException();
+            var players = ParsePlayers(_input);
+            PlayGameRecursive(players, out var winner);
+            return CalculateScore(winner).ToString();
         }
+
+        private bool PlayGameRecursive(List<Day22Player> players, out Day22Player gameWinner)
+        {
+            HashSet<string> playedGameStates = new();
+
+            while (players.All(x => x.Cards.Count != 0))
+            {
+                // if there was a previous round in this game that had exactly the same cards in the same order in the same players' decks, the game instantly ends in a win for player 1.
+                IDictionary<Day22Player, Day22Card> cardPlayers = new Dictionary<Day22Player, Day22Card>();
+                Day22Player winner;
+                List<Day22Card> cards = new();
+
+                var state1 = GenerateState(players[0]);
+                var state2 = GenerateState(players[1]);
+                if (playedGameStates.Contains(state1) || playedGameStates.Contains(state2) )
+                {
+                    winner = players[0];
+                    cards.Add(players[0].Cards.Dequeue());
+                    foreach (var player in players.Skip(1))
+                    {
+                        cards.Add(player.Cards.Dequeue());
+                    }
+
+                    gameWinner = winner;
+                    return true;
+                }
+                else
+                {
+                    foreach (var player in players)
+                    {
+                        var currentCard = player.Cards.Dequeue();
+                        cardPlayers.Add(player, currentCard);
+                    }
+
+                    if (cardPlayers.All(player => player.Value.Value <= player.Key.Cards.Count))
+                    {
+                        //RECURSIVE!
+                        var recursePlayers = players.Select(x => x.Duplicate(cardPlayers[x].Value)).ToList();
+                        PlayGameRecursive(recursePlayers, out var recurseWinner);
+
+                        winner = players.FirstOrDefault(x => x.Name == recurseWinner.Name);
+
+                        cards.Add(cardPlayers[winner]);
+                        foreach (var loser in cardPlayers.Where(x => x.Key.Name != winner.Name))
+                        {
+                            cards.Add(cardPlayers[loser.Key]);
+                        }
+                    }
+                    else
+                    {
+                        // Otherwise, at least one player must not have enough cards left in their deck to recurse; the winner of the round is the player with the higher-value card.
+                        winner = cardPlayers.OrderByDescending(x => x.Value.Value).FirstOrDefault().Key;
+                        cards = cardPlayers.Values.OrderByDescending(x => x.Value).ToList();
+                    }
+                }
+
+
+                foreach (var card in cards)
+                {
+                    winner.Cards.Enqueue(card);
+                }
+
+                playedGameStates.Add(state1);
+                playedGameStates.Add(state2);
+            }
+
+            gameWinner = players.OrderByDescending(x => x.Cards.Count).FirstOrDefault();
+            return true;
+        }
+
+        private string GenerateState(Day22Player player)
+            => string.Join("|", player.Cards.Select(x=> x.Value));//.GetHashCode().ToString();
     }
 
-    public record Day22Player(string Name, Queue<Day22Card> Cards);
+    public record Day22Player(string Name, Queue<Day22Card> Cards)
+    {
+        public Day22Player Duplicate(int numberOfCards) => this with {Cards = new Queue<Day22Card>(Cards.Take(numberOfCards))};
+    };
 
     public record Day22Card(int Value);
 }

@@ -13,12 +13,12 @@ namespace AdventOfCode2020.Tests
             Assert.Equal(output, day.Solve_1());
         }
 
-        /*[Theory]
+        [Theory]
         [InlineData("Player 1:\n9\n2\n6\n3\n1\n\nPlayer 2:\n5\n8\n4\n7\n10", "291")]
         public void Part2(string input, string output)
         {
             var day = new Day_22(input);
             Assert.Equal(output, day.Solve_2());
-        }*/
+        }
     }
 }
