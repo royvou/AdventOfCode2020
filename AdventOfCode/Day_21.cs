@@ -68,7 +68,7 @@ namespace AdventOfCode
                         toRemove.Value.Remove(toRemoveFromOther);
                     }
                 }
-            } while (possiblePosionMapping.Values.Any(x => x.Count > 1));
+            } while (possiblePosionMapping.Values.Reverse().Any(x => x.Count > 1));
 
 
             return possiblePosionMapping;
