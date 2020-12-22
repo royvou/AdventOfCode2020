@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using AoCHelper;
 
@@ -74,7 +75,6 @@ namespace AdventOfCode
         private bool PlayGameRecursive(List<Day22Player> players, out Day22Player gameWinner)
         {
             HashSet<string> playedGameStates = new();
-
             while (players.All(x => x.Cards.Count != 0))
             {
                 // if there was a previous round in this game that had exactly the same cards in the same order in the same players' decks, the game instantly ends in a win for player 1.
@@ -82,9 +82,9 @@ namespace AdventOfCode
                 Day22Player winner;
                 List<Day22Card> cards = new();
 
-                var state1 = GenerateState(players[0]);
-                var state2 = GenerateState(players[1]);
-                if (playedGameStates.Contains(state1) || playedGameStates.Contains(state2) )
+                HashSet<string> currentStates = new HashSet<string>(players.Select(player => GenerateState(player)));
+
+                if (playedGameStates.Overlaps(currentStates))
                 {
                     winner = players[0];
                     cards.Add(players[0].Cards.Dequeue());
@@ -132,16 +132,24 @@ namespace AdventOfCode
                     winner.Cards.Enqueue(card);
                 }
 
-                playedGameStates.Add(state1);
-                playedGameStates.Add(state2);
+                playedGameStates.UnionWith(currentStates);
             }
 
             gameWinner = players.OrderByDescending(x => x.Cards.Count).FirstOrDefault();
             return true;
         }
 
+
         private string GenerateState(Day22Player player)
-            => string.Join("|", player.Cards.Select(x=> x.Value));//.GetHashCode().ToString();
+        {
+            var sb = new StringBuilder();
+            foreach (var card in player.Cards)
+            {
+                sb.Append(card.Value.ToString()).Append("|");
+            }
+
+            return sb.ToString();
+        }
     }
 
     public record Day22Player(string Name, Queue<Day22Card> Cards)
