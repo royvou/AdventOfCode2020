@@ -28,13 +28,14 @@ namespace AdventOfCode2020.Tests
         [InlineData(typeof(Day_19), "241", "424")]
         [InlineData(typeof(Day_20), "84116744709593", "1957")]
         [InlineData(typeof(Day_21), "2412", "mfp,mgvfmvp,nhdjth,hcdchl,dvkbjh,dcvrf,bcjz,mhnrqp")]
-
+        [InlineData(typeof(Day_22), "31314", "")]
         public void TestAllDays(Type type, string result1, string result2)
         {
             var day = (BaseDay) Activator.CreateInstance(type);
 
             Assert.Equal(result1, day.Solve_1());
-            Assert.Equal(result2, day.Solve_2());
+            if (string.IsNullOrEmpty(result2))
+                Assert.Equal(result2, day.Solve_2());
         }
     }
 }
