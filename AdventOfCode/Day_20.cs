@@ -131,7 +131,6 @@ namespace AdventOfCode
                     : toTry.Where(x => completeList.Any(y => y.Number == x.Number)).ToList();
             }
 
-            //toTry = toTry.Where(x => currentMap.Values.All(y => y.Number != x.Number)).ToList();
             if (currentMap.Count == 0)
             {
                 toTry = allMaps.ToList();
@@ -148,11 +147,6 @@ namespace AdventOfCode
             {
                 var originalMap = toTry[possibility];
                 currentMap[(nextX, nextY)] = originalMap;
-                if (!IsLastPosValid(currentMap, allMaps.Length))
-                {
-                    continue;
-                }
-
                 var solved = Solve(allMaps, currentMap, sidesLeftLookup, sidesBottomLookup);
                 if (solved)
                 {
@@ -172,38 +166,6 @@ namespace AdventOfCode
 
         private string GetKey(char[] input)
             => string.Join("", input);
-
-        private static readonly List<(int x, int y, Day20Side current, Day20Side mapToCheck)> SidesToCompare = new()
-        {
-            (-1, 0, Day20Side.Left, Day20Side.Right),
-            (1, 0, Day20Side.Right, Day20Side.Left),
-
-            (0, 1, Day20Side.Bottom, Day20Side.Top),
-            (0, -1, Day20Side.Top, Day20Side.Bottom),
-        };
-
-        private bool IsLastPosValid(IDictionary<(int x, int y), Day20Map> currentMap, int maxWidthMap)
-        {
-            var coordsToCheck = GetCoord(currentMap.Count - 1, maxWidthMap);
-
-            if (!currentMap.TryGetValue((coordsToCheck.X, coordsToCheck.Y), out var currentmapcoord))
-            {
-                return true;
-            }
-
-            foreach (var sideToCheck in SidesToCompare)
-            {
-                if (currentMap.TryGetValue((coordsToCheck.X + sideToCheck.x, coordsToCheck.Y + sideToCheck.y), out var neighbor))
-                {
-                    if (!neighbor.GetSide(sideToCheck.mapToCheck).SequenceEqual(currentmapcoord.GetSide(sideToCheck.current)))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
 
         private (int X, int Y) GetCoord(int number, int mapSize)
             => ((int) ((number) % Math.Sqrt(mapSize)), (int) ((number) / Math.Sqrt(mapSize)));
