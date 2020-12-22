@@ -34,7 +34,7 @@ namespace AdventOfCode2020.Tests
             var day = (BaseDay) Activator.CreateInstance(type);
 
             Assert.Equal(result1, day.Solve_1());
-            if (string.IsNullOrEmpty(result2))
+            if (!string.IsNullOrEmpty(result2))
                 Assert.Equal(result2, day.Solve_2());
         }
     }
