@@ -18,7 +18,6 @@ namespace AdventOfCode
         public override string Solve_1()
         {
             var cards = _input.Select(x => x.AsInt()).ToList();
-
             PlayGame(cards, 100);
             return CalculateScore(cards);
         }
@@ -80,6 +79,21 @@ namespace AdventOfCode
             return sb.ToString();
         }
 
-        public override string Solve_2() => throw new System.NotImplementedException();
+        public override string Solve_2()
+        {
+            var cards = _input.Select(x => x.AsInt()).ToList();
+
+            cards.AddRange(Enumerable.Range(cards.Count + 1, 1_000_000 - cards.Count));
+
+            PlayGame(cards, 10_000_000);
+            return CalculateScore(cards);
+        }
+
+        private string CalculateScore2(List<int> cards)
+        {
+            var indexOfOne = cards.IndexOf(1);
+
+            return ( (long)cards[indexOfOne + 1] * (long)cards[indexOfOne + 2]).ToString();
+        }
     }
 }
