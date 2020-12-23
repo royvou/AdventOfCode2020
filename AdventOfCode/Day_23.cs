@@ -17,57 +17,33 @@ namespace AdventOfCode
 
         public override string Solve_1()
         {
-            var cards = _input.Select(x => x.AsInt()).ToList();
+            //var cards = _input.Select(x => x.AsInt()).ToList();
+            var cards = new LinkedList<int>(); //).ToList();
+            foreach (var item in _input.Select(x => x.AsInt()))
+            {
+                cards.AddLast(item);
+            }
+
             PlayGame(cards, 100);
             return CalculateScore(cards);
         }
 
         public string Solve_1(int rounds)
         {
-            var cards = _input.Select(x => x.AsInt()).ToList();
+            //var cards = _input.Select(x => x.AsInt()).ToList();
+            var cards = new LinkedList<int>(); //).ToList();
+            foreach (var item in _input.Select(x => x.AsInt()))
+            {
+                cards.AddLast(item);
+            }
 
             PlayGame(cards, rounds);
             return CalculateScore(cards);
         }
 
-        private void PlayGame(List<int> cards, int rounds)
+        private string CalculateScore(LinkedList<int> cardsLL)
         {
-            for (var currentCupLoop = 0; currentCupLoop < rounds; currentCupLoop++)
-            {
-                var currentCupIndex = 0;
-
-                var currentLabel = cards[currentCupIndex];
-                var cardsToRemove = cards.Skip(currentCupIndex + 1).Take(3).ToList();
-
-                cards.RemoveRange(currentCupIndex + 1, 3);
-
-                int destinationlabel = -1;
-                int subtractValue = 1;
-                do
-                {
-                    var toLookup = currentLabel - subtractValue;
-                    if (toLookup == 0)
-                    {
-                        destinationlabel = cards.IndexOf(cards.OrderByDescending(x => x).First());
-                    }
-                    else
-                    {
-                        destinationlabel = cards.Contains(toLookup) ? cards.IndexOf(toLookup) : -1;
-                    }
-
-                    subtractValue++;
-                } while (destinationlabel == -1);
-
-                cards.InsertRange(destinationlabel + 1, cardsToRemove);
-
-                //Reorder
-                cards.Add(cards[0]);
-                cards.RemoveAt(0);
-            }
-        }
-
-        private string CalculateScore(List<int> cards)
-        {
+            var cards = cardsLL.ToList();
             var indexOfOne = cards.IndexOf(1);
 
             var sb = new StringBuilder();
@@ -81,19 +57,79 @@ namespace AdventOfCode
 
         public override string Solve_2()
         {
-            var cards = _input.Select(x => x.AsInt()).ToList();
+            var cards = new LinkedList<int>(); //).ToList();
+            foreach (var item in _input.Select(x => x.AsInt()))
+            {
+                cards.AddLast(item);
+            }
 
-            cards.AddRange(Enumerable.Range(cards.Count + 1, 1_000_000 - cards.Count));
+            foreach (var item in Enumerable.Range(cards.Count + 1, 1_000_000 - cards.Count))
+            {
+                cards.AddLast(item);
+            }
+
 
             PlayGame(cards, 10_000_000);
-            return CalculateScore(cards);
+            return CalculateScore2(cards);
         }
 
-        private string CalculateScore2(List<int> cards)
+        private void PlayGame(LinkedList<int> cards, int rounds)
         {
-            var indexOfOne = cards.IndexOf(1);
+            int totalCards = cards.Count;
+            var cardLookup = new Dictionary<int, LinkedListNode<int>>();
+            var node = cards.First;
 
-            return ( (long)cards[indexOfOne + 1] * (long)cards[indexOfOne + 2]).ToString();
+            do
+            {
+                cardLookup[node.Value] = node;
+                node = node.Next;
+            } while (node != null);
+
+            LinkedListNode<int> currentLabel = cards.First;
+            for (var currentCupLoop = 0; currentCupLoop < rounds; currentCupLoop++)
+            {
+                var lltr = new LinkedList<int>();
+
+                for (int i = 0; i < 3; i++)
+                {
+                    var card = currentLabel.NextOrFirst();
+                    cards.Remove(card);
+                    lltr.AddLast(card);
+                }
+
+
+                LinkedListNode<int> destinationlabel = null;
+                int subtractValue = 1;
+                int toLookup = currentLabel.Value - subtractValue;
+                do
+                {
+                    if (toLookup <= 0)
+                    {
+                        toLookup = totalCards;
+                    }
+
+                    if (cardLookup.TryGetValue(toLookup, out var lookedUp) && lookedUp.List == cards)
+                    {
+                        destinationlabel = lookedUp;
+                    }
+
+
+                    toLookup--;
+                } while (destinationlabel == null);
+
+                for (int i = 0; i < 3; i++)
+                {
+                    var card = lltr.Last; //Since we add them front-back we need to go back-front for adding
+                    lltr.Remove(card);
+                    cards.AddAfter(destinationlabel, card);
+                }
+
+                currentLabel = currentLabel.NextOrFirst();
+            }
         }
+
+
+        private string CalculateScore2(LinkedList<int> cards)
+            => cards.SkipWhile(x => x != 1).Take(3).Aggregate(1L, (x, y) => x * y).ToString();
     }
 }
