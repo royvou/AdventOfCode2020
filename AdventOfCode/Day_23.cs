@@ -85,22 +85,24 @@ namespace AdventOfCode
                 node = node.Next;
             } while (node != null);
 
-            LinkedListNode<int> currentLabel = cards.First;
+            LinkedListNode<int> current = cards.First;
+
+            //Array to store current nodes in
+            var links = new LinkedListNode<int>[3];
+
             for (var currentCupLoop = 0; currentCupLoop < rounds; currentCupLoop++)
             {
-                var lltr = new LinkedList<int>();
-
                 for (int i = 0; i < 3; i++)
                 {
-                    var card = currentLabel.NextOrFirst();
+                    var card = current.NextOrFirst();
                     cards.Remove(card);
-                    lltr.AddLast(card);
+                    links[i] = card;
                 }
 
 
-                LinkedListNode<int> destinationlabel = null;
+                LinkedListNode<int> destination = null;
                 int subtractValue = 1;
-                int toLookup = currentLabel.Value - subtractValue;
+                int toLookup = current.Value - subtractValue;
                 do
                 {
                     if (toLookup <= 0)
@@ -110,21 +112,20 @@ namespace AdventOfCode
 
                     if (cardLookup.TryGetValue(toLookup, out var lookedUp) && lookedUp.List == cards)
                     {
-                        destinationlabel = lookedUp;
+                        destination = lookedUp;
                     }
 
 
                     toLookup--;
-                } while (destinationlabel == null);
+                } while (destination == null);
 
-                for (int i = 0; i < 3; i++)
+                for (int i = links.Length - 1; i >= 0; i--)
                 {
-                    var card = lltr.Last; //Since we add them front-back we need to go back-front for adding
-                    lltr.Remove(card);
-                    cards.AddAfter(destinationlabel, card);
+                    var card = links[i];
+                    cards.AddAfter(destination, card);
                 }
 
-                currentLabel = currentLabel.NextOrFirst();
+                current = current.NextOrFirst();
             }
         }
 
