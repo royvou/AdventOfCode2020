@@ -43,15 +43,15 @@ namespace AdventOfCode
         private Point MovePoint(Point currentPoint, Day24Direction step) =>
             step switch
             {
-                Day24Direction.E => currentPoint with { X = currentPoint.X + 1, Y = currentPoint.Y + 0},
-                Day24Direction.SE => currentPoint with { X = currentPoint.X + 0, Y = currentPoint.Y + 1},
-                Day24Direction.SW => currentPoint with { X = currentPoint.X - 1, Y = currentPoint.Y + 1},
-                Day24Direction.W => currentPoint with { X = currentPoint.X - 1, Y = currentPoint.Y + 0},
-                Day24Direction.NW => currentPoint with { X = currentPoint.X + 0, Y = currentPoint.Y - 1 },
-                Day24Direction.NE => currentPoint with { X = currentPoint.X + 1, Y = currentPoint.Y - 1 },
+                Day24Direction.E => new Point(currentPoint.X + 1, currentPoint.Y),
+                Day24Direction.SE => new Point(currentPoint.X + 0, currentPoint.Y + 1),
+                Day24Direction.SW => new Point(currentPoint.X - 1, currentPoint.Y + 1),
+                Day24Direction.W => new Point(currentPoint.X - 1, currentPoint.Y),
+                Day24Direction.NW => new Point(currentPoint.X, currentPoint.Y - 1),
+                Day24Direction.NE => new Point(currentPoint.X + 1, currentPoint.Y - 1),
                 _ => throw new ArgumentOutOfRangeException(nameof(step), step, null)
             };
-
+      
         private static readonly Day24Direction[] Directions = {Day24Direction.E, Day24Direction.W, Day24Direction.NE, Day24Direction.NW, Day24Direction.SE, Day24Direction.SW};
 
         private IEnumerable<Point> GetNeighBours(Point point)
@@ -83,7 +83,6 @@ namespace AdventOfCode
         private Dictionary<Point, bool> ExecuteRound(Dictionary<Point, bool> currentBlackTileMap)
         {
             var result = new Dictionary<Point, bool>();
-
             var toCheck = currentBlackTileMap.Keys.SelectMany(GetNeighBours).Concat(currentBlackTileMap.Keys).ToHashSet();
             foreach (var point in toCheck)
             {
@@ -119,9 +118,24 @@ namespace AdventOfCode
         NW,
         NE
     }
-
-    public record Point(int X, int Y)
+    
+    public readonly struct Point
     {
-        //public int Z => -X - Y;
+        public Point(int x, int y)
+        {
+            X = x;
+            Y = y;
+        }
+
+        public readonly int X;
+
+        public readonly int Y;
+
+        public override int GetHashCode() => HashCode.Combine(X, Y);
+
+        public bool Equals(Point other) => X == other.X && Y == other.Y;
+
+        public override bool Equals(object obj) 
+            => obj is Point other && Equals(other);
     }
 }
