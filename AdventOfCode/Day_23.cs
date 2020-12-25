@@ -76,7 +76,7 @@ namespace AdventOfCode
         private void PlayGame(LinkedList<int> cards, int rounds)
         {
             int totalCards = cards.Count;
-            var cardLookup = new Dictionary<int, LinkedListNode<int>>();
+            var cardLookup = new LinkedListNode<int>[cards.Count + 1]; //new Dictionary<int, LinkedListNode<int>>();
             var node = cards.First;
 
             do
@@ -110,7 +110,8 @@ namespace AdventOfCode
                         toLookup = totalCards;
                     }
 
-                    if (cardLookup.TryGetValue(toLookup, out var lookedUp) && lookedUp.List == cards)
+                    var lookedUp = cardLookup[toLookup];
+                    if (lookedUp != default && lookedUp.List == cards)
                     {
                         destination = lookedUp;
                     }
