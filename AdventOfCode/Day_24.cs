@@ -52,8 +52,10 @@ namespace AdventOfCode
                 _ => throw new ArgumentOutOfRangeException(nameof(step), step, null)
             };
 
+        private static readonly Day24Direction[] Directions = {Day24Direction.E, Day24Direction.W, Day24Direction.NE, Day24Direction.NW, Day24Direction.SE, Day24Direction.SW};
+
         private IEnumerable<Point> GetNeighBours(Point point)
-            => new[] {Day24Direction.E, Day24Direction.W, Day24Direction.NE, Day24Direction.NW, Day24Direction.SE, Day24Direction.SW}.Select(x => MovePoint(point, x));
+            => Directions.Select(x => MovePoint(point, x));
 
         private int CountNeighbours(Dictionary<Point, bool> map, Point point)
             => GetNeighBours(point).Count(x => map.TryGetValue(x, out var black) && black);
@@ -62,48 +64,49 @@ namespace AdventOfCode
             => input.SplitNewLine().Select(x => { return Regex.Matches(x, @"e|se|sw|w|nw|ne").Select(y => y.Value).Select(y => Enum.Parse<Day24Direction>(y, true)).ToArray(); });
 
         public override string Solve_2()
+            => Solve_2(100);
+
+
+        public string Solve_2(int rounds)
         {
             var map = new Dictionary<Point, bool>();
             var actions = ParseInput(_input);
             ExecuteActions(actions, map);
 
-            foreach (var mapItem in map.Where(kvp => !kvp.Value).ToList())
-            {
-                map.Remove(mapItem.Key);
-            }
+            var resultMap = Enumerable.Range(0, rounds).Aggregate(
+                map,
+                (currentBlackTileMap, _) => ExecuteRound(currentBlackTileMap));
 
-            for (int i = 0; i < 100; i++)
+            return resultMap.Count(x => x.Value).ToString();
+        }
+
+        private Dictionary<Point, bool> ExecuteRound(Dictionary<Point, bool> currentBlackTileMap)
+        {
+            var result = new Dictionary<Point, bool>();
+
+            var toCheck = currentBlackTileMap.Keys.SelectMany(GetNeighBours).Concat(currentBlackTileMap.Keys).ToHashSet();
+            foreach (var point in toCheck)
             {
-                var temporaryMap = new Dictionary<Point, bool>();
-                
-                var toCheck = map.Keys.SelectMany(x => GetNeighBours(x)).Concat(map.Keys).ToHashSet();
-                foreach (var point in toCheck)
+                var neighbours = CountNeighbours(currentBlackTileMap, point);
+
+                if (currentBlackTileMap.TryGetValue(point, out var currentPointvalue) && currentPointvalue) //Black Tile
                 {
-                    var neighbours = CountNeighbours(map, point);
-
-                    if (map.TryGetValue(point, out var currentPointvalue))
+                    if (neighbours == 1 || neighbours == 2) // Any black tile with zero or more than 2 black tiles immediately adjacent to it is flipped to white.
                     {
-                        //Existing
-                        if (neighbours == 0 || neighbours > 2)
-                        {
-                            temporaryMap[point] = !currentPointvalue;
-                        }
-                    }
-                    else
-                    {
-                        //New
-                        if (neighbours == 2)
-                        {
-                            temporaryMap[point] = true;
-                        }
+                        result[point] = true;
                     }
                 }
-
-
-                map = temporaryMap;
+                else //White Tile
+                {
+                    //New
+                    if (neighbours == 2)
+                    {
+                        result[point] = true;
+                    }
+                }
             }
 
-            return map.Count(x => x.Value).ToString();
+            return result;
         }
     }
 
@@ -119,6 +122,6 @@ namespace AdventOfCode
 
     public record Point(int X, int Y)
     {
-        public int Z => -X - Y;
+        //public int Z => -X - Y;
     }
 }
